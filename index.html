@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lazio Fungi Satellite</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+:root{
+  --bg:#f4f6f3; --panel:#fff; --ink:#183126; --muted:#69766f;
+  --line:#d8dfda; --accent:#2f6c4f; --danger:#9d4038;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:13px 16px;background:#fff;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:20px}
+header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.app{display:grid;grid-template-columns:minmax(310px,365px) 1fr;min-height:calc(100vh - 68px)}
+aside{padding:12px;background:#fff;border-right:1px solid var(--line);overflow:auto}
+main{min-width:0;position:relative}
+#map{width:100%;height:calc(100vh - 68px);min-height:620px;background:#d8e2dc}
+.card{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:11px;background:#fff}
+.card h2{margin:0 0 9px;font-size:14px}
+label{display:block;font-size:12px;font-weight:750;margin:8px 0 5px}
+select,button,input[type=range]{width:100%;font:inherit}
+select,button{padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+button{font-weight:800;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.secondary{background:#f1f5f2}
+button:disabled{opacity:.55;cursor:wait}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;margin:7px 0}
+.check input{width:17px;height:17px}
+.status{font-size:12px;line-height:1.4;color:var(--muted);margin-top:8px}
+.note{font-size:11px;line-height:1.45;color:var(--muted)}
+.metric{display:grid;grid-template-columns:1fr auto;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12px}
+.metric:last-child{border-bottom:0}
+.score{font-size:34px;font-weight:900;letter-spacing:-.04em}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf4ef;font-size:11px;font-weight:800}
+.progress{height:7px;margin-top:8px;background:#eef2ef;border-radius:999px;overflow:hidden}
+.progress>div{height:100%;width:0;background:var(--accent);transition:width .2s}
+.legend{background:#fff;padding:7px 9px;border-radius:8px;border:1px solid var(--line);font-size:11px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.grad{width:160px;height:8px;border-radius:999px;background:linear-gradient(90deg,#a53f37,#d5ad42,#8db166,#2f6c4f);margin-top:5px}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  aside{border-right:0;border-bottom:1px solid var(--line)}
+  #map{height:72vh;min-height:520px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lazio Fungi Satellite</h1>
+  <p>Satellite + Carta forestale + Suoli + Pioggia + Probabilità specie fungine</p>
+</header>
+
+<div class="app">
+<aside>
+  <div class="card">
+    <h2>Specie e probabilità</h2>
+    <label for="species">Specie</label>
+    <select id="species">
+      <option value="porcini">Porcini / Boletus edulis s.l.</option>
+      <option value="ovulo">Ovulo buono / Amanita caesarea</option>
+      <option value="finferli">Finferli / Cantharellus spp.</option>
+      <option value="chiodini">Chiodini / Armillaria spp.</option>
+      <option value="generic">Generico boschivo</option>
+    </select>
+
+    <label for="rainDays">Pioggia da considerare</label>
+    <select id="rainDays">
+      <option value="1">Ultime 24 ore</option>
+      <option value="3">Ultimi 3 giorni</option>
+      <option value="7">Ultimi 7 giorni</option>
+      <option value="10" selected>Ultimi 10 giorni</option>
+      <option value="14">Ultimi 14 giorni</option>
+    </select>
+
+    <div class="check"><input id="useRain" type="checkbox" checked><span>Usa pioggia</span></div>
+    <div class="check"><input id="useHumidity" type="checkbox" checked><span>Usa umidità aria/suolo</span></div>
+    <div class="check"><input id="useElevation" type="checkbox" checked><span>Usa quota</span></div>
+    <div class="check"><input id="useForest" type="checkbox" checked><span>Usa tipo di bosco</span></div>
+    <div class="check"><input id="useSoil" type="checkbox" checked><span>Usa tipo di terreno</span></div>
+
+    <div class="row" style="margin-top:10px">
+      <button id="weatherBtn" class="primary">Carica meteo</button>
+      <button id="gisBtn" class="secondary">Analizza boschi/suoli</button>
+    </div>
+    <div id="status" class="status">Mappa satellitare pronta. Carica il meteo per creare la prima mappa probabilistica.</div>
+    <div class="progress"><div id="bar"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Layer da sovrapporre</h2>
+    <div class="check"><input id="forestLayerChk" type="checkbox"><span>Carta forestale Regione Lazio</span></div>
+    <div class="check"><input id="soilLayerChk" type="checkbox"><span>Carta dei suoli Regione Lazio</span></div>
+    <div class="check"><input id="rainLayerChk" type="checkbox" checked><span>Griglia pioggia / probabilità</span></div>
+
+    <label for="overlayOpacity">Trasparenza boschi/suoli</label>
+    <input id="overlayOpacity" type="range" min="15" max="85" value="48">
+    <div id="opacityText" class="note">Opacità: 48%</div>
+  </div>
+
+  <div class="card">
+    <h2>Cella selezionata</h2>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px">
+      <div><div class="note">Probabilità stimata</div><div class="score"><span id="score">—</span><span style="font-size:14px">/100</span></div></div>
+      <span id="scoreLabel" class="badge">—</span>
+    </div>
+    <div class="metric"><span>Pioggia</span><b id="rainVal">—</b></div>
+    <div class="metric"><span>Quota</span><b id="elevationVal">—</b></div>
+    <div class="metric"><span>Umidità aria</span><b id="rhVal">—</b></div>
+    <div class="metric"><span>Umidità suolo</span><b id="smVal">—</b></div>
+    <div class="metric"><span>Bosco</span><b id="forestVal">—</b></div>
+    <div class="metric"><span>Suolo</span><b id="soilVal">—</b></div>
+  </div>
+
+  <div class="card">
+    <div class="note">
+      La probabilità è un indice esplorativo, non una garanzia di ritrovamento.
+      La Carta forestale e quella dei suoli sono layer ufficiali regionali. La base satellitare serve solo come riferimento visivo.
+    </div>
+  </div>
+</aside>
+
+<main><div id="map"></div></main>
+</div>
+
+<script>
+(() => {
+  const WMS='https://geoportale.regione.lazio.it/geoserver/ows';
+  const WFS='https://geoportale.regione.lazio.it/geoserver/ows';
+
+  const map=L.map('map',{zoomControl:true}).setView([41.85,12.75],8);
+
+  // Satellite basemap. Attribution is intentionally visible.
+  const satellite=L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:19, attribution:'Tiles &copy; Esri — World Imagery'}
+  ).addTo(map);
+
+  const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
+  });
+
+  const forest=L.tileLayer.wms(WMS,{
+    layers:'geonode:tipi_forestali2',
+    format:'image/png',transparent:true,opacity:.48,
+    attribution:'Regione Lazio — Carta forestale'
+  });
+
+  const soils=L.tileLayer.wms(WMS,{
+    layers:'geonode:arsial_ssp_250K_suoli_lazio',
+    format:'image/png',transparent:true,opacity:.48,
+    attribution:'Regione Lazio / ARSIAL — Carta dei suoli'
+  });
+
+  L.control.layers(
+    {'Satellite':satellite,'Strade':osm},
+    {'Boschi':forest,'Suoli':soils},
+    {collapsed:true}
+  ).addTo(map);
+
+  const gridLayer=L.layerGroup().addTo(map);
+  const selectedLayer=L.layerGroup().addTo(map);
+
+  const els={};
+  ['species','rainDays','useRain','useHumidity','useElevation','useForest','useSoil',
+   'weatherBtn','gisBtn','status','bar','forestLayerChk','soilLayerChk','rainLayerChk',
+   'overlayOpacity','opacityText','score','scoreLabel','rainVal','elevationVal','rhVal',
+   'smVal','forestVal','soilVal'].forEach(id=>els[id]=document.getElementById(id));
+
+  const pts=[];
+  let selected=null;
+  let weatherReady=false;
+  let gisReady=false;
+
+  // Coarse Lazio grid. Deliberately bounded for performance on mobile.
+  for(let lat=41.22;lat<=42.72;lat+=0.18){
+    for(let lon=11.55;lon<=13.88;lon+=0.20){
+      // Elliptical coarse mask; actual map context remains satellite.
+      const dx=(lon-12.68)/1.25, dy=(lat-41.95)/0.82;
+      if(dx*dx+dy*dy<1.12){
+        pts.push({lat:+lat.toFixed(4),lon:+lon.toFixed(4),w:null,forest:null,soil:null,score:null});
+      }
+    }
+  }
+
+  function setStatus(t,p){
+    els.status.textContent=t;
+    if(p!==undefined) els.bar.style.width=Math.max(0,Math.min(100,p))+'%';
+  }
+
+  function color(v){
+    if(!Number.isFinite(v)) return '#bfc8c1';
+    const t=Math.max(0,Math.min(1,v/100));
+    const hue=5+t*128;
+    return `hsl(${hue} 48% ${45-t*7}%)`;
+  }
+
+  function scoreLabel(v){
+    if(!Number.isFinite(v)) return 'n/d';
+    if(v>=82)return'molto favorevole';
+    if(v>=68)return'favorevole';
+    if(v>=52)return'intermedio';
+    if(v>=36)return'debole';
+    return'basso';
+  }
+
+  function recentMean(hourly,key,n=24){
+    const a=(hourly?.[key]||[]).map(Number).filter(Number.isFinite).slice(-n);
+    return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+  }
+
+  function today(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function rainSum(daily,days){
+    if(!daily?.time)return null;
+    const now=today(), vals=[];
+    daily.time.forEach((t,i)=>{if(t<now)vals.push(Number(daily.precipitation_sum?.[i]||0));});
+    return vals.slice(-days).reduce((a,b)=>a+b,0);
+  }
+
+  async function fetchWeather(batch){
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+batch.map(p=>p.lat).join(',')+
+      '&longitude='+batch.map(p=>p.lon).join(',')+
+      '&daily=precipitation_sum&hourly=relative_humidity_2m,soil_moisture_9_to_27cm'+
+      '&past_days=14&forecast_days=1&timezone=Europe%2FRome';
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('meteo '+r.status);
+    const j=await r.json();
+    return Array.isArray(j)?j:[j];
+  }
+
+  async function loadWeather(){
+    els.weatherBtn.disabled=true;
+    setStatus('Caricamento meteo…',0);
+    try{
+      const chunk=30;
+      for(let i=0;i<pts.length;i+=chunk){
+        const batch=pts.slice(i,i+chunk);
+        const data=await fetchWeather(batch);
+        data.forEach((d,k)=>{
+          const p=batch[k]; if(!p)return;
+          p.w={
+            elevation:Number(d.elevation||0),
+            rain1:rainSum(d.daily,1),
+            rain3:rainSum(d.daily,3),
+            rain7:rainSum(d.daily,7),
+            rain10:rainSum(d.daily,10),
+            rain14:rainSum(d.daily,14),
+            rh:recentMean(d.hourly,'relative_humidity_2m',24),
+            sm:recentMean(d.hourly,'soil_moisture_9_to_27cm',24)
+          };
+        });
+        recalc();
+        render();
+        setStatus('Meteo '+Math.min(i+chunk,pts.length)+' / '+pts.length,
+          Math.round(Math.min(i+chunk,pts.length)/pts.length*100));
+      }
+      weatherReady=true;
+      setStatus('Meteo pronto. Puoi già usare la mappa; boschi/suoli raffinano il punteggio.',100);
+    }catch(e){
+      setStatus('Errore meteo: '+e.message+'. Controlla che il sito sia aperto via GitHub Pages.',0);
+    }finally{els.weatherBtn.disabled=false;}
+  }
+
+  function propsText(props){
+    return props?Object.entries(props).map(([k,v])=>`${k}:${v??''}`).join('|').toLowerCase():'';
+  }
+
+  function vegetationScore(props,species){
+    const s=propsText(props);
+    if(!s)return 50;
+    let b=55;
+    if(/fagg|fagus/.test(s))b=90;
+    else if(/castagn|castanea/.test(s))b=92;
+    else if(/querc|cerro|rover/.test(s))b=85;
+    else if(/lecc|ilex/.test(s))b=72;
+    else if(/abete|pino|conifer/.test(s))b=77;
+    if(species==='ovulo' && /querc|cerro|castagn|lecc/.test(s))b=95;
+    if(species==='porcini' && /fagg|castagn|querc|cerro|abete|pino/.test(s))b=93;
+    if(species==='finferli' && /fagg|castagn|querc|abete|pino/.test(s))b=90;
+    return b;
+  }
+
+  function soilScore(props){
+    const s=propsText(props);
+    if(!s)return 55;
+    if(/andosol|vulcan|piroclast|tufo/.test(s))return 88;
+    if(/cambisol|luvisol|brun/.test(s))return 80;
+    if(/leptosol|calcar|rendzin/.test(s))return 68;
+    if(/vertisol|argill/.test(s))return 58;
+    if(/fluvisol|alluv|sabb/.test(s))return 45;
+    return 62;
+  }
+
+  function rainScore(mm,days){
+    if(!Number.isFinite(mm))return 50;
+    const ideal=days<=3?18:days<=7?35:55;
+    const d=Math.abs(mm-ideal);
+    return Math.max(15,100-d*1.25);
+  }
+
+  function humidityScore(rh,sm){
+    const a=Number.isFinite(rh)?Math.max(20,Math.min(100,(rh-45)*1.8)):50;
+    const b=Number.isFinite(sm)?Math.max(20,Math.min(100,(sm-.10)*330)):50;
+    return(a+b)/2;
+  }
+
+  function elevationScore(m,species){
+    if(!Number.isFinite(m))return 50;
+    let lo=250,hi=1450;
+    if(species==='ovulo'){lo=50;hi=1000;}
+    if(species==='finferli'){lo=300;hi=1600;}
+    if(species==='chiodini'){lo=0;hi=1200;}
+    if(m>=lo&&m<=hi)return 90;
+    return Math.max(25,90-Math.min(Math.abs(m-lo),Math.abs(m-hi))*.08);
+  }
+
+  function weights(species){
+    return species==='porcini'
+      ?{rain:.28,humidity:.13,elevation:.12,forest:.31,soil:.16}
+      :species==='ovulo'
+      ?{rain:.26,humidity:.10,elevation:.14,forest:.34,soil:.16}
+      :species==='finferli'
+      ?{rain:.29,humidity:.16,elevation:.17,forest:.25,soil:.13}
+      :{rain:.33,humidity:.15,elevation:.14,forest:.24,soil:.14};
+  }
+
+  function calc(p){
+    if(!p.w)return null;
+    const days=Number(els.rainDays.value);
+    const sp=els.species.value;
+    const w=weights(sp);
+    const values={
+      rain:rainScore(p.w['rain'+days],days),
+      humidity:humidityScore(p.w.rh,p.w.sm),
+      elevation:elevationScore(p.w.elevation,sp),
+      forest:vegetationScore(p.forest,sp),
+      soil:soilScore(p.soil)
+    };
+    const enabled={
+      rain:els.useRain.checked,humidity:els.useHumidity.checked,elevation:els.useElevation.checked,
+      forest:els.useForest.checked,soil:els.useSoil.checked
+    };
+    let sw=0,sv=0;
+    for(const k of Object.keys(values)){if(enabled[k]){sw+=w[k];sv+=w[k]*values[k];}}
+    return sw?Math.round(sv/sw):null;
+  }
+
+  function recalc(){pts.forEach(p=>p.score=calc(p));}
+
+  function render(){
+    gridLayer.clearLayers();
+    if(!els.rainLayerChk.checked)return;
+    const days=Number(els.rainDays.value);
+    pts.forEach(p=>{
+      if(!p.w)return;
+      const radius=8500;
+      const c=L.circle([p.lat,p.lon],{
+        radius,color:'#fff',weight:1,fillColor:color(p.score),fillOpacity:.54
+      }).bindTooltip(
+        `<b>${p.score??'—'}/100</b><br>${p.w['rain'+days]?.toFixed(0)??'—'} mm / ${days} gg`
+      );
+      c.on('click',()=>selectPoint(p));
+      c.addTo(gridLayer);
+    });
+  }
+
+  function pickLabel(props,fallback){
+    if(!props)return fallback;
+    const e=Object.entries(props).find(([k,v])=>v!=null && /(tipo|descr|nome|denom|classe|formaz|soil|bosco|forest)/i.test(k));
+    return e?String(e[1]).slice(0,80):fallback;
+  }
+
+  function selectPoint(p){
+    selected=p;
+    selectedLayer.clearLayers();
+    L.circleMarker([p.lat,p.lon],{radius:7,color:'#fff',weight:2,fillColor:'#111',fillOpacity:1}).addTo(selectedLayer);
+    const days=Number(els.rainDays.value);
+    els.score.textContent=Number.isFinite(p.score)?p.score:'—';
+    els.scoreLabel.textContent=scoreLabel(p.score);
+    els.rainVal.textContent=p.w?`${p.w['rain'+days].toFixed(0)} mm`:'—';
+    els.elevationVal.textContent=p.w?`${p.w.elevation.toFixed(0)} m`:'—';
+    els.rhVal.textContent=p.w&&Number.isFinite(p.w.rh)?`${p.w.rh.toFixed(0)}%`:'—';
+    els.smVal.textContent=p.w&&Number.isFinite(p.w.sm)?`${p.w.sm.toFixed(2)} m³/m³`:'—';
+    els.forestVal.textContent=pickLabel(p.forest,gisReady?'n.d.':'non analizzato');
+    els.soilVal.textContent=pickLabel(p.soil,gisReady?'n.d.':'non analizzato');
+  }
+
+  async function wfsAt(typeName,p){
+    const e=.0022;
+    const qs=new URLSearchParams({
+      service:'WFS',version:'2.0.0',request:'GetFeature',typeNames:typeName,
+      outputFormat:'application/json',srsName:'EPSG:4326',count:'1',
+      bbox:[p.lon-e,p.lat-e,p.lon+e,p.lat+e,'EPSG:4326'].join(',')
+    });
+    const r=await fetch(WFS+'?'+qs.toString());
+    if(!r.ok)throw new Error('WFS '+r.status);
+    const j=await r.json();
+    return j.features?.[0]?.properties||null;
+  }
+
+  async function loadGIS(){
+    if(!weatherReady){setStatus('Carica prima il meteo.',0);return;}
+    els.gisBtn.disabled=true;
+    setStatus('Analisi boschi/suoli…',0);
+    let next=0,done=0;
+    async function worker(){
+      while(true){
+        const i=next++; if(i>=pts.length)return;
+        const p=pts[i];
+        try{p.forest=await wfsAt('geonode:tipi_forestali2',p);}catch(e){}
+        try{p.soil=await wfsAt('geonode:arsial_ssp_250K_suoli_lazio',p);}catch(e){}
+        done++;
+        if(done%8===0){
+          recalc();render();
+          setStatus('Boschi/suoli '+done+' / '+pts.length,Math.round(done/pts.length*100));
+        }
+      }
+    }
+    await Promise.all(Array.from({length:5},worker));
+    gisReady=true;
+    recalc();render();
+    if(selected)selectPoint(selected);
+    setStatus('Analisi completata. La probabilità ora usa anche bosco e suolo dove disponibili.',100);
+    els.gisBtn.disabled=false;
+  }
+
+  function updateOverlay(){
+    const op=Number(els.overlayOpacity.value)/100;
+    forest.setOpacity(op);soils.setOpacity(op);
+    els.opacityText.textContent='Opacità: '+Math.round(op*100)+'%';
+    if(els.forestLayerChk.checked){if(!map.hasLayer(forest))forest.addTo(map);}else if(map.hasLayer(forest))map.removeLayer(forest);
+    if(els.soilLayerChk.checked){if(!map.hasLayer(soils))soils.addTo(map);}else if(map.hasLayer(soils))map.removeLayer(soils);
+  }
+
+  const legend=L.control({position:'bottomright'});
+  legend.onAdd=()=>{const d=L.DomUtil.create('div','legend');d.innerHTML='Probabilità bassa → alta<div class="grad"></div>';return d;};
+  legend.addTo(map);
+
+  els.weatherBtn.addEventListener('click',loadWeather);
+  els.gisBtn.addEventListener('click',loadGIS);
+  els.forestLayerChk.addEventListener('change',updateOverlay);
+  els.soilLayerChk.addEventListener('change',updateOverlay);
+  els.overlayOpacity.addEventListener('input',updateOverlay);
+  els.rainLayerChk.addEventListener('change',render);
+  [els.species,els.rainDays,els.useRain,els.useHumidity,els.useElevation,els.useForest,els.useSoil].forEach(el=>{
+    el.addEventListener('change',()=>{recalc();render();if(selected)selectPoint(selected);});
+  });
+
+  map.on('click',e=>{
+    if(!weatherReady)return;
+    let best=null,bd=Infinity;
+    pts.forEach(p=>{const d=map.distance(e.latlng,[p.lat,p.lon]);if(d<bd){bd=d;best=p;}});
+    if(best)selectPoint(best);
+  });
+})();
+</script>
+</body>
+</html>
