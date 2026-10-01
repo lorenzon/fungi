@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lazio Fungi Map v4</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}html,body,#map{height:100%;margin:0}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#dfe8e2;color:#173327}
+#map{position:fixed;inset:0;background:#dfe8e2}.panel{position:fixed;z-index:1000;left:14px;right:14px;top:max(14px,env(safe-area-inset-top));background:#fffffff2;backdrop-filter:blur(12px);border-radius:20px;padding:16px;box-shadow:0 8px 30px #0004;max-width:720px}
+.head{display:flex;justify-content:space-between;gap:8px;align-items:center}.title{font-size:24px;font-weight:900}.version{font-size:11px;background:#173327;color:#fff;padding:4px 7px;border-radius:8px}.sub{color:#68766f;font-weight:600;font-size:13px;margin:3px 0 12px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{font-size:12px;font-weight:800}select,button{font:inherit}select{width:100%;margin-top:4px;padding:10px;border:1px solid #ccd6d0;border-radius:12px;background:#fff;font-weight:700}
+.row{display:flex;gap:8px;margin-top:10px;align-items:center}.btn{border:0;border-radius:12px;padding:10px 12px;font-weight:800;background:#fff;box-shadow:0 2px 10px #0002}.primary{background:#2870df;color:#fff}.recalc{background:#173327;color:#fff;flex:1}.bar{height:7px;border-radius:9px;background:linear-gradient(90deg,#b83f35,#d3b22e,#3b9550);margin:12px 0 8px}
+.status{font-size:12px;color:#5f6e66;line-height:1.35}.diag{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.pill{padding:5px 8px;border-radius:10px;background:#edf1ef;font-size:11px;font-weight:800}.ok{background:#dff2e3;color:#17612a}.bad{background:#f8dddd;color:#8b2626}.wait{background:#fff0ca;color:#77570d}
+.result{display:none;margin-top:10px;border-top:1px solid #dde5e0;padding-top:10px}.scoreline{display:flex;justify-content:space-between;align-items:end}.score{font-size:36px;font-weight:950}.forest{font-size:12px;color:#637168}.grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;margin-top:8px;font-size:12px}.grid b{text-align:right}.why{font-size:11px;color:#65736c;margin-top:7px}
+.drawerBtn{position:fixed;z-index:1100;right:14px;bottom:calc(22px + env(safe-area-inset-bottom));border:0;border-radius:16px;padding:12px 14px;background:#fff;font-weight:900;box-shadow:0 4px 20px #0004}.target{position:fixed;z-index:1100;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));width:46px;height:46px;border:0;border-radius:50%;background:#fff;font-size:20px;box-shadow:0 4px 20px #0004;display:none}
+.drawer{position:fixed;z-index:3000;top:0;right:0;width:min(400px,92vw);height:100%;padding:22px;background:#fffffff8;backdrop-filter:blur(14px);box-shadow:-8px 0 28px #0005;transform:translateX(105%);transition:.25s;overflow:auto}.drawer.open{transform:none}.close{float:right;border:0;border-radius:50%;width:38px;height:38px;font-size:22px}.formula{background:#edf3ef;padding:12px;border-radius:12px;font-weight:900}.factor{display:flex;justify-content:space-between;border-bottom:1px solid #e1e6e3;padding:8px 0}.note{font-size:12px;line-height:1.5;color:#627068}
+@media(max-width:480px){.panel{padding:13px}.title{font-size:20px}.sub{margin-bottom:8px}.row{margin-top:8px}.score{font-size:30px}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<section class="panel">
+ <div class="head"><div class="title">🍄 Lazio Fungi Map</div><span class="version">v4</span></div>
+ <div class="sub">Satellite + Carta forestale. Tocca un bosco per analizzarlo.</div>
+ <div class="controls">
+  <label>Fungo<select id="species"><option value="porcino">Porcino</option><option value="ovulo">Ovulo buono</option><option value="finferlo">Finferlo</option><option value="chiodino">Chiodino</option></select></label>
+  <label>Pioggia<select id="days"><option>3</option><option selected>7</option><option>10</option><option>14</option></select></label>
+ </div>
+ <div class="row"><button id="gps" class="btn primary">◎ GPS</button><button id="recalc" class="btn recalc">↻ Ricalcola</button></div>
+ <div class="bar"></div>
+ <div id="status" class="status">Mappa pronta. Tocca dentro un’area forestale colorata.</div>
+ <div class="diag"><span id="dForest" class="pill">Bosco —</span><span id="dWeather" class="pill">Meteo —</span><span id="dTopo" class="pill">Topografia —</span></div>
+ <div id="result" class="result">
+  <div class="scoreline"><div><span id="score" class="score">—</span><b>/100</b></div><div id="forestName" class="forest"></div></div>
+  <div class="grid"><span>Pioggia periodo</span><b id="rain">—</b><span>Temperatura media</span><b id="temp">—</b><span>Quota</span><b id="elev">—</b><span>Pendenza</span><b id="slope">—</b><span>Esposizione</span><b id="aspect">—</b></div>
+  <div id="why" class="why"></div>
+ </div>
+</section>
+<button id="target" class="target">🎯</button><button id="drawerBtn" class="drawerBtn">ⓘ Indice</button>
+<aside id="drawer" class="drawer"><button id="close" class="close">×</button><h2>Come calcoliamo l’indice</h2><p class="note">Il risultato 0–100 è un <b>indice di favorevolezza ecologica</b>, non ancora una probabilità statistica di trovare funghi.</p><div class="formula">Habitat forestale × condizioni recenti</div><h3>Condizioni recenti</h3><div class="factor"><span>Pioggia</span><b>52%</b></div><div class="factor"><span>Temperatura</span><b>25%</b></div><div class="factor"><span>Esposizione</span><b>13%</b></div><div class="factor"><span>Pendenza</span><b>10%</b></div><p class="note">Il tipo di bosco cambia la compatibilità per specie. Pioggia e temperatura hanno un intervallo ottimale: più pioggia non significa sempre condizioni migliori. Pendenza ed esposizione correggono il microclima.</p><h3>Diagnostica</h3><p class="note">Bosco, Meteo e Topografia vengono controllati separatamente. Se un servizio fallisce, vedrai esattamente quale invece del vecchio messaggio generico.</p></aside>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const WFS='https://geoportale.regione.lazio.it/geoserver/ows';
+const map=L.map('map',{zoomControl:false}).setView([41.9,12.75],8);
+L.control.zoom({position:'bottomleft'}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri World Imagery'}).addTo(map);
+L.tileLayer.wms(WFS,{layers:'geonode:tipi_forestali2',format:'image/png',transparent:true,opacity:.55,attribution:'Regione Lazio — Carta forestale'}).addTo(map);
+
+const $=id=>document.getElementById(id), clamp=x=>Math.max(0,Math.min(1,x));
+let lastPoint=null,selected=null,gpsMarker=null,gpsCircle=null,lastGps=null,watch=null,firstFix=true;
+
+const profiles={
+ porcino:{r:[12,35,85],t:[10,17,23]},ovulo:{r:[8,25,60],t:[16,22,29]},
+ finferlo:{r:[18,45,100],t:[9,16,22]},chiodino:{r:[15,40,95],t:[8,15,22]}
+};
+function bell(x,a,o,b){if(x<=a||x>=b)return .15;if(x<=o)return .15+.85*(x-a)/(o-a);return .15+.85*(b-x)/(b-o)}
+function forestText(p){let vals=Object.values(p||{}).filter(v=>typeof v==='string'&&v.length>2);return vals.join(' · ')||'Bosco'}
+function habitat(txt,sp){txt=(txt||'').toLowerCase();let h=.58;
+ const has=(...a)=>a.some(x=>txt.includes(x));
+ if(sp==='porcino'){if(has('fag','castagn','cerro','querc'))h=.92;if(has('lecc'))h=.60}
+ if(sp==='ovulo'){if(has('querc','cerro','lecc','castagn'))h=.90;if(has('fag'))h=.48}
+ if(sp==='finferlo'){if(has('fag','castagn','conifer','abete'))h=.90;if(has('querc','cerro'))h=.74}
+ if(sp==='chiodino'){if(has('castagn','querc','fag','piopp','latif'))h=.88}
+ return h
+}
+function pip(id,state,label){let e=$(id);e.className='pill '+state;e.textContent=label}
+function pointInRing(x,y,r){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){let a=r[i],b=r[j];if(((a[1]>y)!=(b[1]>y))&&(x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]))c=!c}return c}
+function contains(f,x,y){let g=f.geometry;if(!g)return false;if(g.type==='Polygon')return pointInRing(x,y,g.coordinates[0]);if(g.type==='MultiPolygon')return g.coordinates.some(p=>pointInRing(x,y,p[0]));return false}
+async function forestAt(lat,lon){
+ let d=.015,b=[lon-d,lat-d,lon+d,lat+d].join(',');
+ let u=WFS+'?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode:tipi_forestali2&outputFormat=application%2Fjson&srsName=EPSG:4326&bbox='+encodeURIComponent(b+',EPSG:4326')+'&maxFeatures=40';
+ let r=await fetch(u);if(!r.ok)throw Error('HTTP '+r.status);let j=await r.json();
+ return (j.features||[]).find(f=>contains(f,lon,lat))||null
+}
+async function weather(lat,lon,days){
+ let u='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&daily=precipitation_sum,temperature_2m_mean&timezone=auto&past_days='+days+'&forecast_days=1';
+ let r=await fetch(u);if(!r.ok)throw Error('HTTP '+r.status);let j=await r.json(),pr=j.daily?.precipitation_sum||[],tt=j.daily?.temperature_2m_mean||[];
+ let histPr=pr.slice(0,days).filter(Number.isFinite),histT=tt.slice(0,days).filter(Number.isFinite);
+ if(!histPr.length)throw Error('nessun dato');
+ return {rain:histPr.reduce((a,b)=>a+b,0),temp:histT.length?histT.reduce((a,b)=>a+b,0)/histT.length:null}
+}
+async function elevation(lat,lon){
+ let pts=[[lat,lon],[lat+.002,lon],[lat-.002,lon],[lat,lon+.002],[lat,lon-.002]];
+ let u='https://api.open-meteo.com/v1/elevation?latitude='+pts.map(p=>p[0]).join(',')+'&longitude='+pts.map(p=>p[1]).join(',');
+ let r=await fetch(u);if(!r.ok)throw Error('HTTP '+r.status);let j=await r.json(),z=j.elevation;if(!z||z.length<5)throw Error('DEM incompleto');
+ let dy=444,dx=444*Math.cos(lat*Math.PI/180),ns=(z[1]-z[2])/dy,ew=(z[3]-z[4])/dx;
+ let slope=Math.atan(Math.sqrt(ns*ns+ew*ew))*180/Math.PI,aspect=(Math.atan2(ew,ns)*180/Math.PI+180+360)%360;
+ return {elev:z[0],slope,aspect}
+}
+function compass(a){return ['N','NE','E','SE','S','SO','O','NO'][Math.round(a/45)%8]}
+async function analyze(lat,lon){
+ lastPoint={lat,lon};$('result').style.display='none';$('status').textContent='Analisi del punto selezionato…';
+ pip('dForest','wait','Bosco …');pip('dWeather','wait','Meteo …');pip('dTopo','wait','Topografia …');
+ let days=+$('days').value,sp=$('species').value;
+ let [fr,wr,tr]=await Promise.allSettled([forestAt(lat,lon),weather(lat,lon,days),elevation(lat,lon)]);
+ let f=fr.status==='fulfilled'?fr.value:null,w=wr.status==='fulfilled'?wr.value:null,t=tr.status==='fulfilled'?tr.value:null;
+ if(fr.status==='rejected'){pip('dForest','bad','Bosco ✕');$('status').textContent='Carta forestale non raggiungibile: '+fr.reason.message;return}
+ if(!f){pip('dForest','bad','Bosco ✕');$('status').textContent='Il punto non risulta dentro un poligono forestale. Tocca dentro l’area colorata.';return}
+ pip('dForest','ok','Bosco ✓');pip('dWeather',w?'ok':'bad',w?'Meteo ✓':'Meteo ✕');pip('dTopo',t?'ok':'bad',t?'Topografia ✓':'Topografia ✕');
+ if(selected)map.removeLayer(selected);selected=L.geoJSON(f,{style:{color:'#fff',weight:3,fillOpacity:.18}}).addTo(map);
+ let name=forestText(f.properties),h=habitat(name,sp),p=profiles[sp],parts=[],den=0,num=0,rs=null,ts=null,as=null,ss=null;
+ if(w){rs=bell(w.rain,...p.r);num+=.52*rs;den+=.52;if(Number.isFinite(w.temp)){ts=bell(w.temp,...p.t);num+=.25*ts;den+=.25}}
+ if(t){let north=(1+Math.cos(t.aspect*Math.PI/180))/2;as=.72+.18*north;ss=t.slope<5?.78:t.slope<=25?1:t.slope<=40?.85:.65;num+=.13*as+.10*ss;den+=.23}
+ let recent=den?num/den:.5,score=Math.round(100*clamp((.28+.72*h)*recent));
+ $('score').textContent=score;$('forestName').textContent=name;$('rain').textContent=w?w.rain.toFixed(1)+' mm / '+days+' gg':'non disponibile';$('temp').textContent=w&&Number.isFinite(w.temp)?w.temp.toFixed(1)+' °C':'non disponibile';$('elev').textContent=t?Math.round(t.elev)+' m':'non disponibile';$('slope').textContent=t?t.slope.toFixed(0)+'°':'non disponibile';$('aspect').textContent=t?compass(t.aspect):'non disponibile';
+ $('why').textContent='Habitat '+Math.round(h*100)+'/100'+(rs!=null?' · Pioggia '+Math.round(rs*100)+'/100':'')+(ts!=null?' · Temperatura '+Math.round(ts*100)+'/100':'')+(as!=null?' · Esposizione '+Math.round(as*100)+'/100':'')+(ss!=null?' · Pendenza '+Math.round(ss*100)+'/100':'');
+ $('result').style.display='block';$('status').textContent=(w&&t)?'Analisi completata.':'Indice calcolato con i dati disponibili; guarda gli indicatori rossi per il servizio mancante.'
+}
+map.on('click',e=>analyze(e.latlng.lat,e.latlng.lng));
+$('recalc').onclick=()=>lastPoint?analyze(lastPoint.lat,lastPoint.lon):$('status').textContent='Prima tocca un bosco sulla mappa.';
+$('days').onchange=$('species').onchange=()=>{if(lastPoint)analyze(lastPoint.lat,lastPoint.lon)};
+$('drawerBtn').onclick=()=>$('drawer').classList.add('open');$('close').onclick=()=>$('drawer').classList.remove('open');
+$('target').onclick=()=>{if(lastGps)map.setView(lastGps,Math.max(map.getZoom(),14))};
+$('gps').onclick=()=>{
+ if(!navigator.geolocation){$('status').textContent='GPS non supportato.';return}
+ if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null;$('gps').textContent='◎ GPS';return}
+ firstFix=true;$('status').textContent='Cerco la posizione…';
+ watch=navigator.geolocation.watchPosition(pos=>{let ll=[pos.coords.latitude,pos.coords.longitude],acc=pos.coords.accuracy||0;lastGps=ll;
+  if(gpsMarker)map.removeLayer(gpsMarker);if(gpsCircle)map.removeLayer(gpsCircle);
+  gpsCircle=L.circle(ll,{radius:acc,color:'#2870df',weight:1,fillOpacity:.06}).addTo(map);gpsMarker=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#2870df',fillOpacity:1}).addTo(map);
+  $('target').style.display='block';$('gps').textContent='● GPS attivo';if(firstFix){map.setView(ll,Math.max(map.getZoom(),14));firstFix=false}
+ },err=>$('status').textContent='GPS: '+err.message,{enableHighAccuracy:true,maximumAge:10000,timeout:20000})
+};
+</script></body></html>
