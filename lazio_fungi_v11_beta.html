@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lazio Fungi Map v11</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}html,body,#map{height:100%;margin:0}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#dfe8e2;color:#173327}
+#map{position:fixed;inset:0;background:#dfe8e2}.panel{position:fixed;z-index:1000;left:14px;right:14px;top:max(14px,env(safe-area-inset-top));background:#fffffff2;backdrop-filter:blur(12px);border-radius:20px;padding:13px;box-shadow:0 8px 30px #0004;max-width:720px}
+.head{display:flex;justify-content:space-between;gap:8px;align-items:center;cursor:pointer}.headRight{display:flex;gap:8px;align-items:center}.title{font-size:20px;font-weight:900}.version{font-size:11px;background:#173327;color:#fff;padding:4px 7px;border-radius:8px}.toggle{border:0;background:#edf1ef;border-radius:10px;width:36px;height:32px;font-size:18px;font-weight:900}
+.quicktools{position:fixed;z-index:1100;left:14px;bottom:calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;max-width:min(310px,78vw)}.toolbox{background:#fffffff2;border-radius:14px;padding:10px;box-shadow:0 3px 14px #0004;font-size:12px}.toolbox button{border:0;border-radius:9px;padding:9px;background:#e9efeb;font-weight:800}.toolbox input{width:100%;padding:10px;border:1px solid #ccd6d0;border-radius:9px;margin-bottom:6px}.toolbox .toolrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.toolbox .toolrow button{flex:1}.toolbox small{display:block;margin-top:6px;line-height:1.4}.tooltabs{display:flex;gap:5px;flex-wrap:wrap}.tooltabs button{border:0;border-radius:12px;padding:10px 8px;background:#fffffff2;box-shadow:0 2px 12px #0004;font-size:12px;font-weight:800;flex:1;white-space:nowrap}.compactbox[hidden],.mapnotice[hidden]{display:none!important}.compactbox{margin-top:4px;max-width:340px}.toolhead{display:flex;justify-content:space-between;align-items:center;font-weight:850;margin-bottom:8px}.toolhead button{font-size:20px;padding:3px 12px}.mapnotice{padding:8px 10px;border-radius:10px;background:#fffffff2;font-size:12px;box-shadow:0 2px 10px #0003;max-width:340px}.quicktools{right:14px;max-width:none}.map-switches{position:fixed;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;z-index:1090}.map-switches button{width:58px;height:58px;border:2px solid white;background:#fffffff0;border-radius:13px;box-shadow:0 3px 12px #0005;font-size:22px}.map-switches small{display:block;font-size:10px;font-weight:800}.arrival{position:fixed;left:14px;right:14px;bottom:calc(94px + env(safe-area-inset-bottom));z-index:1200;background:#fff;border:2px solid #1b8d5b;border-radius:18px;padding:15px;box-shadow:0 6px 25px #0005;font-size:13px}.arrival[hidden]{display:none}.arrival strong{font-size:18px}.arrival button{margin:8px 6px 0 0;padding:11px;border:0;border-radius:9px;background:#dceee3;font-weight:800}.panelBody{display:block}.panel.collapsed .panelBody{display:none}.sub{color:#68766f;font-weight:600;font-size:13px;margin:3px 0 8px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{font-size:12px;font-weight:800}select,button{font:inherit}select{width:100%;margin-top:4px;padding:10px;border:1px solid #ccd6d0;border-radius:12px;background:#fff;font-weight:700}
+.row{display:flex;gap:8px;margin-top:8px;align-items:center}.btn{border:0;border-radius:12px;padding:10px 12px;font-weight:800;background:#fff;box-shadow:0 2px 10px #0002}.primary{background:#2870df;color:#fff}.recalc{background:#173327;color:#fff;flex:1}.bar{height:7px;border-radius:9px;background:linear-gradient(90deg,#b83f35,#d3b22e,#3b9550);margin:12px 0 8px}
+.status{font-size:12px;color:#5f6e66;line-height:1.35}.diag{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.pill{padding:5px 8px;border-radius:10px;background:#edf1ef;font-size:11px;font-weight:800}.ok{background:#dff2e3;color:#17612a}.bad{background:#f8dddd;color:#8b2626}.wait{background:#fff0ca;color:#77570d}
+.result{display:none;margin-top:10px;border-top:1px solid #dde5e0;padding-top:10px}.scoreline{display:flex;justify-content:space-between;align-items:end;gap:10px}.score{font-size:30px;font-weight:950}.forest{font-size:12px;color:#637168;text-align:right;max-width:65%}.grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;margin-top:8px;font-size:12px}.grid b{text-align:right}.why{font-size:11px;color:#65736c;margin-top:7px}
+.drawerBtn{position:fixed;z-index:1100;right:14px;bottom:calc(22px + env(safe-area-inset-bottom));border:0;border-radius:16px;padding:12px 14px;background:#fff;font-weight:900;box-shadow:0 4px 20px #0004}.target{position:fixed;z-index:1100;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));width:46px;height:46px;border:0;border-radius:50%;background:#fff;font-size:20px;box-shadow:0 4px 20px #0004;display:none}
+.drawer{position:fixed;z-index:3000;top:0;right:0;width:min(400px,92vw);height:100%;padding:22px;background:#fffffff8;backdrop-filter:blur(14px);box-shadow:-8px 0 28px #0005;transform:translateX(105%);transition:.25s;overflow:auto}.drawer.open{transform:none}.close{float:right;border:0;border-radius:50%;width:38px;height:38px;font-size:22px}.formula{background:#edf3ef;padding:12px;border-radius:12px;font-weight:900}.factor{display:flex;justify-content:space-between;border-bottom:1px solid #e1e6e3;padding:8px 0}.note{font-size:12px;line-height:1.5;color:#627068}
+
+/* V10: map-first mobile UI */
+.appTop{position:fixed;z-index:1300;top:calc(10px + env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:9px;align-items:center;pointer-events:none}.appTop>*{pointer-events:auto}.searchPill{display:flex;align-items:center;gap:8px;background:#fff;border-radius:25px;box-shadow:0 3px 18px #0003;padding:5px 9px 5px 15px;flex:1;min-width:0;height:45px}.searchPill span{font-size:22px;color:#356d50}.searchPill input{border:0;outline:0;min-width:0;flex:1;font-size:14px;background:transparent}.searchPill button{background:#236b4b;color:white;border:0;border-radius:50%;width:35px;height:35px;font-size:19px}.roundBtn{height:48px;width:48px;border:0;border-radius:15px;background:#fff;box-shadow:0 3px 14px #0003;font-size:22px}.floatingTools{position:fixed;z-index:1050;right:12px;top:calc(78px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:9px}.mapThumb{background:linear-gradient(135deg,#e3eab9 0 35%,#79b787 36% 70%,#b6d9b7 71%)}.mapThumb.off{filter:grayscale(1);opacity:.7}.contextCard,.journeyBar{position:fixed;z-index:1250;bottom:calc(15px + env(safe-area-inset-bottom));left:12px;right:12px;max-width:520px;margin:auto;background:#fffffff5;border-radius:20px;padding:15px;box-shadow:0 4px 25px #0004;backdrop-filter:blur(12px)}.contextCard[hidden],.journeyBar[hidden]{display:none!important}.contextTop{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:850;color:#557164;letter-spacing:1px}.contextTop button{border:0;background:#eef2ee;border-radius:50%;width:29px;height:29px;font-size:19px}.contextTitle{font-size:17px;font-weight:850;margin:4px 0}.contextSub{font-size:12px;color:#61746a;line-height:1.4;max-height:38px;overflow:auto}.contextActions{display:flex;gap:8px;margin-top:11px}.contextActions button{border:0;border-radius:12px;padding:12px;font-weight:850}.primaryAction{flex:1;background:#186b46;color:white}.contextActions button:last-child{background:#e8efeb;color:#244f39}.journeyBar{display:flex;justify-content:space-between;align-items:center;gap:10px}.journeyBar small{display:block;margin-top:5px;color:#63746a}.journeyBar button{background:#e7ece9;border:0;border-radius:11px;padding:11px;font-weight:800}.panel{display:none!important}.panel.v10Open{display:block!important;z-index:1500;top:calc(70px + env(safe-area-inset-top));max-height:65dvh;overflow:auto;left:12px;right:12px}.panel.v10Open .panelBody{display:block!important}.quicktools{left:12px;right:auto;bottom:calc(18px + env(safe-area-inset-bottom));max-width:min(310px,85vw);z-index:1200}.tooltabs{display:none}.quicktools .compactbox{max-height:55dvh;overflow:auto}.map-switches{display:none}.arrival{bottom:calc(18px + env(safe-area-inset-bottom));z-index:1450}.target,.drawerBtn{display:none!important}.mapnotice{display:none!important}.leaflet-bottom.leaflet-left{bottom:85px}.leaflet-bottom.leaflet-right{bottom:0}.miniTrip{position:fixed;z-index:1220;bottom:calc(92px + env(safe-area-inset-bottom));left:14px;background:#fff;border-radius:30px;padding:7px 12px;box-shadow:0 2px 12px #0003;font-size:12px;font-weight:800}
+@media(min-width:700px){.appTop{max-width:650px;margin:auto}.floatingTools{right:calc((100vw - min(100vw,950px))/2 + 12px)}}
+</style>
+<style>
+.v11dock{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:12px;right:12px;z-index:1190;display:flex;justify-content:center;gap:8px;pointer-events:none}
+.v11dock button{pointer-events:auto;border:0;border-radius:28px;background:#102c25;color:white;padding:12px 15px;font-weight:750;box-shadow:0 3px 12px #0007}
+.v11modal{position:fixed;inset:0;z-index:3000;background:#091913eF;color:#fff;display:flex;flex-direction:column;padding:calc(16px + env(safe-area-inset-top)) 15px calc(15px + env(safe-area-inset-bottom));gap:12px;overflow:auto}
+.v11modal[hidden],.v11dock[hidden]{display:none!important}
+.v11modal button{background:#24483d;color:white;border:1px solid #587466;border-radius:12px;padding:12px;font-size:15px}
+.v11modal input,.v11modal select,.v11modal textarea{background:#1b332b;color:#fff;border:1px solid #587466;border-radius:10px;padding:12px;width:100%;font-size:16px}
+.v11modal .entry{background:#19352b;padding:14px;border-radius:14px;margin:5px 0}
+.v11modal .entry img{width:85px;height:85px;object-fit:cover;border-radius:8px}
+.v11modal .vrow{display:flex;align-items:center;gap:10px}
+.v11modal .vrow>*{flex:1}
+.v11modal small{color:#b9d2c5}
+#v11Preview{max-height:200px;max-width:100%;object-fit:contain}
+</style></head>
+<body>
+<div id="map"></div>
+<header class="appTop"><div class="searchPill"><span>⌕</span><input id="quickSearch" placeholder="Cerca località nel Lazio…" aria-label="Cerca località"><button id="quickGo" aria-label="Avvia ricerca">➜</button></div><button id="filtersQuick" class="roundBtn" aria-label="Filtri fungo e meteo">⚙</button></header>
+<div class="floatingTools"><button id="gpsQuick" class="roundBtn" title="Attiva GPS o centra la posizione">◎</button><button id="overlayTiny" class="roundBtn mapThumb" title="Mostra o nascondi boschi">🌲</button><button id="baseTiny" class="roundBtn" title="Satellite o stradale">▧</button></div>
+<section id="contextCard" class="contextCard" hidden><div class="contextTop"><span id="modeLabel">AREA SELEZIONATA</span><button id="dismissContext" aria-label="Chiudi scheda">×</button></div><div class="contextTitle" id="contextTitle">Bosco selezionato</div><div class="contextSub" id="contextSub">Analisi in corso…</div><div class="contextActions"><button id="primaryAction" class="primaryAction">🚗 Raggiungi</button><button id="detailAction">Dettagli</button></div></section>
+<div id="journeyBar" class="journeyBar" hidden><div><b id="journeyTitle">Navigazione auto</b><small id="journeyMeta">Calcolo percorso…</small></div><button id="journeyStop">Termina</button></div>
+<section class="panel collapsed" id="panel">
+ <div class="head" id="panelHead"><div class="title">🍄 Lazio Fungi Map</div><div class="headRight"><span class="version">v11</span><button id="togglePanel" class="toggle">⌄</button></div></div>
+ <div class="panelBody">
+ <div class="sub">Satellite + Carta forestale. Tocca un bosco per analizzarlo.</div>
+ <div class="controls">
+  <label>Fungo<select id="species"><option value="porcino">Porcino</option><option value="ovulo">Ovulo buono</option><option value="finferlo">Finferlo</option><option value="chiodino">Chiodino</option></select></label>
+  <label>Pioggia<select id="days"><option>3</option><option selected>7</option><option>10</option><option>14</option></select></label>
+ </div>
+ <div class="row"><button id="gps" class="btn primary">◎ GPS</button><button id="recalc" class="btn recalc">↻ Ricalcola</button></div>
+ <div class="bar"></div>
+ <div id="status" class="status">Carico archivio forestale locale…</div>
+ <div class="diag"><span id="dForest" class="pill">Bosco —</span><span id="dWeather" class="pill">Meteo —</span><span id="dTopo" class="pill">Topografia —</span></div>
+ <div id="result" class="result">
+  <div class="scoreline"><div><span id="score" class="score">—</span><b>/100</b></div><div id="forestName" class="forest"></div></div>
+  <div class="grid"><span>Pioggia periodo</span><b id="rain">—</b><span>Temperatura media</span><b id="temp">—</b><span>Quota</span><b id="elev">—</b><span>Pendenza</span><b id="slope">—</b><span>Esposizione</span><b id="aspect">—</b></div>
+  <div id="why" class="why"></div>
+ </div>
+ </div>
+</section>
+<div class="quicktools">
+ <div class="tooltabs"><button data-tool="searchBox">⌕ Cerca</button><button data-tool="navBox">➤ Viaggio</button><button data-tool="trackBox">● Traccia</button></div>
+ <div class="toolbox compactbox" id="searchBox" hidden><div class="toolhead">Cerca località <button class="toolclose">×</button></div><input id="placeSearch" placeholder="Paese, monte, località…" aria-label="Cerca località"><div class="toolrow"><button id="searchBtn">⌕ Cerca luogo</button></div></div>
+ <div class="toolbox compactbox" id="navBox" hidden><div class="toolhead">Viaggio e trekking <button class="toolclose">×</button></div><div class="toolrow"><button id="routeCar">🚗 Ricalcola auto</button><button id="routeFoot">🥾 Percorso a piedi</button><button id="clearRoute">✕ Cancella percorso</button></div><small>Seleziona un bosco: con GPS attivo viene calcolato il percorso in auto. Il punto potrebbe non essere accessibile in macchina.</small></div>
+ <div class="toolbox compactbox" id="trackBox" hidden><div class="toolhead">Traccia escursione <button class="toolclose">×</button></div><div class="toolrow"><button id="trackBtn">● Avvia traccia</button><button id="saveGpx" disabled>GPX</button></div><small id="trackInfo">Traccia non attiva.</small></div>
+ <div class="toolbox compactbox" id="layerBox" hidden><div class="toolhead">Carta forestale <button class="toolclose">×</button></div><div class="toolrow"><button id="layerBtn">◉ Boschi 55%</button></div><input id="opacity" aria-label="Opacità boschi" type="range" min="0" max="100" step="5" value="55" style="margin:8px 0 0"></div><div class="map-switches"><button id="overlayQuick" title="Accendi o spegni la carta forestale">🌲<small>Boschi</small></button><button id="basemapQuick" title="Passa da satellite a mappa stradale">🗺️<small>Strade</small></button></div><div class="arrival" id="arrival" hidden><strong>Sei arrivato a destinazione</strong><div>Sei vicino al punto scelto. Verifica che l’accesso sia sicuro.</div><button id="startHike">🥾 Inizia escursione</button><button id="dismissArrival">Più tardi</button></div>
+ <div id="placeInfo" class="mapnotice" hidden>Tocca un bosco per scegliere la destinazione.</div>
+ <div id="miniTrack" class="mapnotice" hidden></div>
+ </div>
+ <button id="target" class="target">🎯</button><button id="drawerBtn" class="drawerBtn">ⓘ Indice</button>
+<aside id="drawer" class="drawer"><button id="close" class="close">×</button><h2>Come calcoliamo l’indice</h2><p class="note">Il risultato 0–100 è un <b>indice di favorevolezza ecologica</b>, non una probabilità statistica.</p><div class="formula">Habitat forestale × condizioni recenti</div><h3>Condizioni recenti</h3><div class="factor"><span>Pioggia</span><b>52%</b></div><div class="factor"><span>Temperatura</span><b>25%</b></div><div class="factor"><span>Esposizione</span><b>13%</b></div><div class="factor"><span>Pendenza</span><b>10%</b></div><p class="note">Dati forestali: Regione Lazio — Carta forestale su base tipologica, elaborata e semplificata per questa applicazione.</p></aside>
+<div class="v11dock" id="v11dock"><button id="v11Photo">📷 Ritrovamento</button><button id="v11Archive">▤ Archivio</button></div>
+<input type="file" id="v11Camera" accept="image/*" capture="environment" hidden>
+<section class="v11modal" id="v11Sheet" hidden><div class="vrow"><h2 id="v11Title">Archivio escursioni</h2><button id="v11Close" style="flex:0 0 auto">✕</button></div><div id="v11Body"></div></section><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const WFS='https://geoportale.regione.lazio.it/geoserver/ows';
+const map=L.map('map',{zoomControl:false}).setView([41.9,12.75],8);
+L.control.zoom({position:'bottomleft'}).addTo(map);
+const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri World Imagery'}).addTo(map);const streets=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});let streetMode=false;
+const forestOverlay=L.tileLayer.wms(WFS,{layers:'geonode:tipi_forestali2',format:'image/png',transparent:true,opacity:.55,attribution:'Regione Lazio — Carta forestale'}).addTo(map);
+const $=id=>document.getElementById(id),clamp=x=>Math.max(0,Math.min(1,x));
+let lastPoint=null,selected=null,gpsMarker=null,gpsCircle=null,lastGps=null,watch=null,firstFix=true,analysisSeq=0,forestData=null;let journeyMode="search",destinationVersion=0,arrivalDismissed=false,routeMode=null,routeDestination=null;let routeLine=null,trackLine=null,track=[],tracking=false,trackStart=0,trackDistance=0;
+const profiles={porcino:{r:[12,35,85],t:[10,17,23]},ovulo:{r:[8,25,60],t:[16,22,29]},finferlo:{r:[18,45,100],t:[9,16,22]},chiodino:{r:[15,40,95],t:[8,15,22]}};
+function bell(x,a,o,b){if(x<=a||x>=b)return .15;if(x<=o)return .15+.85*(x-a)/(o-a);return .15+.85*(b-x)/(b-o)}
+function forestText(p){return [...new Set([p?.categoria,p?.tipologia].filter(Boolean))].join(' · ')||'Bosco'}
+function habitat(txt,sp){txt=(txt||'').toLowerCase();let h=.58,has=(...a)=>a.some(x=>txt.includes(x));if(sp==='porcino'){if(has('fag','castagn','cerro','querc'))h=.92;if(has('lecc'))h=.60}if(sp==='ovulo'){if(has('querc','cerro','lecc','castagn'))h=.90;if(has('fag'))h=.48}if(sp==='finferlo'){if(has('fag','castagn','conifer','abete'))h=.90;if(has('querc','cerro'))h=.74}if(sp==='chiodino'){if(has('castagn','querc','fag','piopp','latif'))h=.88}return h}
+function pip(id,state,label){let e=$(id);e.className='pill '+state;e.textContent=label}
+function ringContains(ring,x,y){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){let xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))inside=!inside}return inside}
+function geomContains(g,x,y){const poly=p=>p.length&&ringContains(p[0],x,y)&&!p.slice(1).some(h=>ringContains(h,x,y));return g?.type==='Polygon'?poly(g.coordinates):g?.type==='MultiPolygon'?g.coordinates.some(poly):false}
+const forestReady=fetch('boschi_lazio_web.geojson').then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(j=>{forestData=j;$('status').textContent='Archivio forestale pronto. Tocca un bosco.';return j}).catch(e=>{$('status').textContent='Archivio forestale locale non caricato: '+e.message;throw e});
+async function forestAt(lat,lon){if(!forestData)await forestReady;for(const f of forestData.features||[])if(geomContains(f.geometry,lon,lat))return f;return null}
+async function weather(lat,lon,days){let u='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&daily=precipitation_sum,temperature_2m_mean&timezone=auto&past_days='+days+'&forecast_days=1&_='+Date.now();let r=await fetch(u,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);let j=await r.json(),pr=j.daily?.precipitation_sum||[],tt=j.daily?.temperature_2m_mean||[],n=Math.min(days,pr.length),a=pr.slice(0,n).filter(Number.isFinite),b=tt.slice(0,n).filter(Number.isFinite);if(!a.length)throw Error('nessun dato');return{rain:a.reduce((x,y)=>x+y,0),temp:b.length?b.reduce((x,y)=>x+y,0)/b.length:null}}
+async function elevation(lat,lon){let pts=[[lat,lon],[lat+.002,lon],[lat-.002,lon],[lat,lon+.002],[lat,lon-.002]],u='https://api.open-meteo.com/v1/elevation?latitude='+pts.map(p=>p[0]).join(',')+'&longitude='+pts.map(p=>p[1]).join(','),r=await fetch(u);if(!r.ok)throw Error('HTTP '+r.status);let j=await r.json(),z=j.elevation;if(!z||z.length<5)throw Error('DEM incompleto');let dy=444,dx=444*Math.cos(lat*Math.PI/180),ns=(z[1]-z[2])/dy,ew=(z[3]-z[4])/dx;return{elev:z[0],slope:Math.atan(Math.sqrt(ns*ns+ew*ew))*180/Math.PI,aspect:(Math.atan2(ew,ns)*180/Math.PI+180+360)%360}}
+function compass(a){return ['N','NE','E','SE','S','SO','O','NO'][Math.round(a/45)%8]}
+async function analyze(lat,lon){$('placeInfo').textContent='Destinazione: '+lat.toFixed(5)+', '+lon.toFixed(5)+' — identifico la zona…';reversePlace(lat,lon);const seq=++analysisSeq;lastPoint={lat,lon};$('result').style.display='block';$('score').textContent='…';$('status').textContent='Analisi…';pip('dForest','wait','Bosco …');pip('dWeather','wait','Meteo …');pip('dTopo','wait','Topografia …');const days=+$('days').value,sp=$('species').value,p=profiles[sp];
+const [F,W,T]=await Promise.all([forestAt(lat,lon).then(v=>({ok:1,v})).catch(e=>({ok:0,e})),weather(lat,lon,days).then(v=>({ok:1,v})).catch(e=>({ok:0,e})),elevation(lat,lon).then(v=>({ok:1,v})).catch(e=>({ok:0,e}))]);if(seq!==analysisSeq)return;
+let f=F.ok?F.v:null,w=W.ok?W.v:null,t=T.ok?T.v:null;pip('dForest',f?'ok':'bad',f?'Bosco ✓':F.ok?'Fuori bosco':'Bosco ✕');pip('dWeather',W.ok?'ok':'bad',W.ok?'Meteo ✓':'Meteo ✕');pip('dTopo',T.ok?'ok':'bad',T.ok?'Topografia ✓':'Topografia ✕');
+if(selected)map.removeLayer(selected);selected=f?.geometry?L.geoJSON(f,{style:{color:'#fff',weight:3,fillOpacity:.18}}).addTo(map):L.circleMarker([lat,lon],{radius:9,color:'#fff',weight:3,fillColor:'#e2a52b',fillOpacity:.75}).addTo(map);
+let name=f?forestText(f.properties):'Nessun tipo forestale nel punto';$('forestName').textContent=name;if(w){$('rain').textContent=w.rain.toFixed(1)+' mm / '+days+' gg';$('temp').textContent=Number.isFinite(w.temp)?w.temp.toFixed(1)+' °C':'—'}if(t){$('elev').textContent=Math.round(t.elev)+' m';$('slope').textContent=t.slope.toFixed(0)+'°';$('aspect').textContent=compass(t.aspect)}
+let h=f?habitat(name,sp):null,num=0,den=0,rs=null,ts=null,as=null,ss=null;if(w){rs=bell(w.rain,...p.r);num+=.52*rs;den+=.52;if(Number.isFinite(w.temp)){ts=bell(w.temp,...p.t);num+=.25*ts;den+=.25}}if(t){let north=(1+Math.cos(t.aspect*Math.PI/180))/2;as=.72+.18*north;ss=t.slope<5?.78:t.slope<=25?1:t.slope<=40?.85:.65;num+=.13*as+.10*ss;den+=.23}let env=den?num/den:null,score=h!=null&&env!=null?Math.round(100*clamp((.28+.72*h)*env)):null;$('score').textContent=score??'—';let bits=[];if(h!=null)bits.push('Habitat '+Math.round(h*100)+'/100');if(rs!=null)bits.push('Pioggia '+Math.round(rs*100)+'/100');if(ts!=null)bits.push('Temperatura '+Math.round(ts*100)+'/100');if(as!=null)bits.push('Esposizione '+Math.round(as*100)+'/100');if(ss!=null)bits.push('Pendenza '+Math.round(ss*100)+'/100');$('why').textContent=bits.join(' · ');$('status').textContent=score!=null?'Indice completo calcolato.':'Manca il tipo forestale per l’indice completo.'}
+
+// One compact drawer at a time; tapping the same button closes it.
+document.querySelectorAll('[data-tool]').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.tool,wasOpen=!$(id).hidden;document.querySelectorAll('.compactbox').forEach(box=>box.hidden=true);if(!wasOpen)$(id).hidden=false});
+document.querySelectorAll('.toolclose').forEach(btn=>btn.onclick=()=>btn.closest('.compactbox').hidden=true);
+const noticeObserver=new MutationObserver(()=>{const el=$('placeInfo');el.hidden=!el.textContent||el.textContent==='Tocca un bosco per scegliere la destinazione.';});noticeObserver.observe($('placeInfo'),{childList:true,characterData:true,subtree:true});
+// Tools: satellite overlay, search, reverse geocoding, routes and GPS track.
+function setOpacity(v){forestOverlay.setOpacity(v/100);$('opacity').value=v;$('layerBtn').textContent='◉ Boschi '+v+'%';try{localStorage.setItem('forestOpacity',v)}catch(e){}}
+$('opacity').oninput=e=>setOpacity(+e.target.value);
+$('layerBtn').onclick=()=>setOpacity(+$('opacity').value===0?55:0);
+try{setOpacity(Math.min(100,Math.max(0,+(localStorage.getItem('forestOpacity')??55))))}catch(e){}
+async function reversePlace(lat,lon){
+ const id=lat.toFixed(5)+','+lon.toFixed(5);
+ try{
+  const u='https://nominatim.openstreetmap.org/reverse?format=json&zoom=14&addressdetails=1&lat='+lat+'&lon='+lon;
+  const r=await fetch(u,{headers:{'Accept':'application/json'}});if(!r.ok)throw Error('Geocodifica '+r.status);
+  const j=await r.json();if(!lastPoint||lastPoint.lat.toFixed(5)+','+lastPoint.lon.toFixed(5)!==id)return;
+  const a=j.address||{},loc=a.village||a.town||a.city||a.municipality||a.hamlet||a.county||j.display_name;
+  $('placeInfo').textContent='Zona: '+loc+' · '+id;
+ }catch(e){if(lastPoint&&lastPoint.lat.toFixed(5)+','+lastPoint.lon.toFixed(5)===id)$('placeInfo').textContent='Zona: '+id+' (nome non disponibile)'}
+}
+$('searchBtn').onclick=async()=>{
+ const q=$('placeSearch').value.trim();if(!q)return;
+ $('placeInfo').textContent='Cerco '+q+'…';
+ try{
+  const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=it&q='+encodeURIComponent(q+', Lazio'),{headers:{'Accept':'application/json'}});
+  if(!r.ok)throw Error('HTTP '+r.status);
+  const a=await r.json();if(!a.length)throw Error('Località non trovata');
+  const p=a[0],lat=+p.lat,lon=+p.lon;map.setView([lat,lon],13);$('placeInfo').textContent='Trovato: '+p.display_name+' · tocca il bosco da raggiungere.';
+ }catch(e){$('placeInfo').textContent='Ricerca: '+e.message}
+};
+$('placeSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){$('placeSearch').blur();$('searchBtn').click()}});
+function haversine(a,b){const R=6371000,p=Math.PI/180,dlat=(b[0]-a[0])*p,dlon=(b[1]-a[1])*p,h=Math.sin(dlat/2)**2+Math.cos(a[0]*p)*Math.cos(b[0]*p)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)))}
+async function route(mode){const currentVersion=destinationVersion;const target=lastPoint?{...lastPoint}:null;
+ if(!lastPoint){$('placeInfo').textContent='Prima seleziona una destinazione sulla mappa.';return}
+ if(!lastGps){$('placeInfo').textContent='Attiva GPS e attendi la posizione prima di navigare.';return}
+ $('placeInfo').textContent='Calcolo percorso '+(mode==='auto'?'auto':'a piedi')+'…';
+ const [lat,lon]=lastGps,to=lastPoint;
+ try{
+  let coords,distance,duration;
+  if(mode==='auto'){
+   const u='https://router.project-osrm.org/route/v1/driving/'+lon+','+lat+';'+to.lon+','+to.lat+'?overview=full&geometries=geojson';
+   const r=await fetch(u);if(!r.ok)throw Error('Servizio auto '+r.status);
+   const j=await r.json();if(j.code!=='Ok'||!j.routes?.length)throw Error('Percorso non trovato');
+   coords=j.routes[0].geometry.coordinates.map(p=>[p[1],p[0]]);distance=j.routes[0].distance;duration=j.routes[0].duration;
+  }else{
+   const req={locations:[{lat,lon},{lat:to.lat,lon:to.lon}],costing:'pedestrian',directions_options:{units:'kilometers'}};
+   const u='https://valhalla1.openstreetmap.de/route?json='+encodeURIComponent(JSON.stringify(req));
+   const r=await fetch(u);if(!r.ok)throw Error('Servizio trekking '+r.status);
+   const j=await r.json();if(!j.trip?.legs?.length)throw Error('Sentiero non disponibile');
+   // Valhalla uses encoded polyline precision 6.
+   function decode(encoded){let i=0,lat=0,lon=0,pts=[];while(i<encoded.length){let n=0,shift=0,b;do{b=encoded.charCodeAt(i++)-63;n|=(b&31)<<shift;shift+=5}while(b>=32);lat+=(n&1)?~(n>>1):n>>1;n=0;shift=0;do{b=encoded.charCodeAt(i++)-63;n|=(b&31)<<shift;shift+=5}while(b>=32);lon+=(n&1)?~(n>>1):n>>1;pts.push([lat/1e6,lon/1e6])}return pts}
+   coords=j.trip.legs.flatMap((leg,i)=>decode(leg.shape).slice(i?1:0));distance=j.trip.summary.length*1000;duration=j.trip.summary.time;
+  }
+  if(currentVersion!==destinationVersion)return;
+  if(routeLine)map.removeLayer(routeLine);
+  routeMode=mode;routeDestination=target;journeyMode=mode==='auto'?'drive':'hike';
+  routeLine=L.polyline(coords,{color:mode==='auto'?'#2870df':'#f1a52b',weight:5,opacity:.9}).addTo(map);
+  map.fitBounds(routeLine.getBounds(),{padding:[35,35]});
+  $('placeInfo').textContent=(mode==='auto'?'Auto':'A piedi')+': '+(distance/1000).toFixed(1)+' km · '+Math.round(duration/60)+' min stimati. Verifica accessi e sentieri.';
+ }catch(e){$('placeInfo').textContent='Navigazione '+(mode==='auto'?'auto':'a piedi')+' non disponibile: '+e.message}
+}
+function clearRoute(){if(routeLine){map.removeLayer(routeLine);routeLine=null}routeMode=null;routeDestination=null;journeyMode='search'}$('clearRoute').onclick=()=>{destinationVersion++;clearRoute();$('arrival').hidden=true;$('placeInfo').textContent='Percorso cancellato. Seleziona un’altra area.'};$('routeCar').onclick=()=>route('auto');$('routeFoot').onclick=()=>route('piedi');
+$('overlayQuick').onclick=()=>setOpacity(+$('opacity').value===0?55:0);$('basemapQuick').onclick=()=>{streetMode=!streetMode;if(streetMode){map.removeLayer(satellite);streets.addTo(map);streets.bringToBack()}else{map.removeLayer(streets);satellite.addTo(map);satellite.bringToBack()}$('basemapQuick').innerHTML=streetMode?'🛰️<small>Satellite</small>':'🗺️<small>Strade</small>'};
+$('dismissArrival').onclick=()=>{$('arrival').hidden=true;arrivalDismissed=true};$('startHike').onclick=()=>{destinationVersion++;clearRoute();journeyMode='hike';$('arrival').hidden=true;$('trackBox').hidden=false;$('panel').classList.add('collapsed');$('panel').classList.remove('v10Open');$('togglePanel').textContent='⌄';if(!tracking)$('trackBtn').click();$('placeInfo').textContent='Escursione avviata: GPS in registrazione. Mantieni Safari aperto.'};
+function recordPosition(ll,accuracy){
+ if(!tracking||accuracy>80)return;
+ const now=Date.now(),prev=track[track.length-1];
+ if(prev){const d=haversine([prev.lat,prev.lon],ll);if(d<5||d>150||now-prev.time<1500)return;trackDistance+=d}
+ track.push({lat:ll[0],lon:ll[1],time:now});
+ if(!trackLine)trackLine=L.polyline([],{color:'#ff4d35',weight:5}).addTo(map);
+ trackLine.addLatLng(ll);$('trackInfo').textContent=(trackDistance/1000).toFixed(2)+' km · '+Math.round((now-trackStart)/60000)+' min · '+track.length+' punti';$('miniTrack').hidden=false;$('miniTrack').textContent='● Traccia: '+(trackDistance/1000).toFixed(2)+' km';
+ try{localStorage.setItem('fungiLastTrack',JSON.stringify(track))}catch(e){}
+}
+$('trackBtn').onclick=()=>{
+ if(!tracking){
+  if(!navigator.geolocation){$('trackInfo').textContent='GPS non disponibile';return}
+  if(watch===null)$('gps').click();
+  track=[];trackDistance=0;trackStart=Date.now();tracking=true;$('miniTrack').hidden=false;$('miniTrack').textContent='● Registrazione GPS in corso';
+  if(trackLine)map.removeLayer(trackLine);trackLine=null;
+  $('trackBtn').textContent='■ Termina traccia';$('saveGpx').disabled=true;$('trackInfo').textContent='Registrazione avviata. Tieni Safari in primo piano.';
+ }else{
+  tracking=false;$('miniTrack').hidden=true;$('trackBtn').textContent='● Avvia traccia';$('saveGpx').disabled=track.length<2;
+  $('trackInfo').textContent='Traccia terminata: '+(trackDistance/1000).toFixed(2)+' km, '+track.length+' punti.';
+ }
+};
+$('saveGpx').onclick=()=>{
+ if(track.length<2)return;
+ const points=track.map(p=>'<trkpt lat="'+p.lat+'" lon="'+p.lon+'"><time>'+new Date(p.time).toISOString()+'</time></trkpt>').join('');
+ const xml='<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Lazio Fungi Map" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Escursione Lazio Fungi</name><trkseg>'+points+'</trkseg></trk></gpx>';
+ const url=URL.createObjectURL(new Blob([xml],{type:'application/gpx+xml'})),a=document.createElement('a');a.href=url;a.download='escursione-funghi.gpx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+
+
+// V10 UI orchestrator: existing data and navigation engines remain unchanged.
+const context=$('contextCard'),journey=$('journeyBar');
+function showContext(){if(!lastPoint||journeyMode==='hike')return;context.hidden=false;journey.hidden=true;$('modeLabel').textContent='AREA SELEZIONATA';$('contextTitle').textContent='Bosco selezionato';$('contextSub').textContent='Coordinate '+lastPoint.lat.toFixed(5)+', '+lastPoint.lon.toFixed(5);$('primaryAction').textContent='🚗 Raggiungi';}
+$('quickGo').onclick=()=>{$('placeSearch').value=$('quickSearch').value;$('searchBtn').click();$('quickSearch').blur()};$('quickSearch').addEventListener('keydown',e=>{if(e.key==='Enter')$('quickGo').click()});
+$('filtersQuick').onclick=()=>{$('panel').classList.toggle('v10Open')};
+$('gpsQuick').onclick=()=>{if(watch===null)$('gps').click();else if(lastGps)map.setView(lastGps,Math.max(map.getZoom(),15))};
+$('overlayTiny').onclick=()=>{$('overlayQuick').click();$('overlayTiny').classList.toggle('off',+$('opacity').value===0)};
+$('baseTiny').onclick=()=>{$('basemapQuick').click();$('baseTiny').textContent=streetMode?'▣':'▧'};
+$('dismissContext').onclick=()=>{context.hidden=true};
+$('detailAction').onclick=()=>{$('panel').classList.add('v10Open')};
+$('primaryAction').onclick=()=>{if(journeyMode==='hike'){$('trackBox').hidden=false;return}if(watch===null){$('gps').click();$('contextSub').textContent='Attendo il GPS per calcolare il percorso…';return}route('auto')};
+$('journeyStop').onclick=()=>{if(journeyMode==='hike'){if(tracking)$('trackBtn').click();$('trackBox').hidden=false;journey.hidden=true;return}$('clearRoute').click();journey.hidden=true;context.hidden=false};
+const infoObs=new MutationObserver(()=>{if(lastPoint&&journeyMode!=='hike'&&!context.hidden){const n=$('forestName').textContent,score=$('score').textContent;if(n)$('contextTitle').textContent=n;if(score&&score!=='…'&&score!=='—')$('contextSub').textContent='Favorevolezza '+score+'/100 · '+$('placeInfo').textContent.replace(/^Zona: /,'');}if(routeLine&&journeyMode==='drive'){journey.hidden=false;context.hidden=true;$('journeyTitle').textContent='🚗 Verso il bosco';$('journeyMeta').textContent=$('placeInfo').textContent}if(journeyMode==='hike'&&tracking){journey.hidden=false;context.hidden=true;$('journeyTitle').textContent='🥾 Escursione in corso';$('journeyMeta').textContent=$('trackInfo').textContent;$('journeyStop').textContent='Termina traccia'}else $('journeyStop').textContent='Termina';});
+infoObs.observe($('placeInfo'),{childList:true,characterData:true,subtree:true});infoObs.observe($('score'),{childList:true});infoObs.observe($('forestName'),{childList:true});infoObs.observe($('trackInfo'),{childList:true,characterData:true,subtree:true});
+$('startHike').addEventListener('click',()=>{journey.hidden=false;$('journeyTitle').textContent='🥾 Escursione in corso';$('journeyMeta').textContent='Registrazione GPS avviata';$('journeyStop').textContent='Termina traccia'});
+$('journeyStop').addEventListener('click',()=>{if(journeyMode==='hike'&&tracking){$('trackBtn').click();journey.hidden=true;$('trackBox').hidden=false}});
+
+map.on('click',e=>{if(journeyMode==='hike')return;destinationVersion++;arrivalDismissed=false;$('arrival').hidden=true;clearRoute();analyze(e.latlng.lat,e.latlng.lng);showContext();if(!lastGps)$('placeInfo').textContent='Area selezionata: attiva il GPS per il percorso auto.';});$('recalc').onclick=()=>lastPoint&&analyze(lastPoint.lat,lastPoint.lon);$('days').onchange=$('species').onchange=()=>lastPoint&&analyze(lastPoint.lat,lastPoint.lon);
+function togglePanel(){let p=$('panel');p.classList.toggle('collapsed');$('togglePanel').textContent=p.classList.contains('collapsed')?'⌄':'⌃'}$('togglePanel').onclick=e=>{e.stopPropagation();togglePanel()};$('panelHead').onclick=e=>{if(e.target.id!=='togglePanel')togglePanel()};
+$('drawerBtn').onclick=()=>$('drawer').classList.add('open');$('close').onclick=()=>$('drawer').classList.remove('open');$('target').onclick=()=>lastGps&&map.setView(lastGps,Math.max(map.getZoom(),14));
+$('gps').onclick=()=>{if(!navigator.geolocation)return;if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null;$('gps').textContent='◎ GPS';return}firstFix=true;watch=navigator.geolocation.watchPosition(pos=>{let ll=[pos.coords.latitude,pos.coords.longitude],acc=pos.coords.accuracy||0;lastGps=ll;recordPosition(ll,acc);if(journeyMode==='drive'&&routeDestination&&acc<=60&&!arrivalDismissed){const meters=haversine(ll,[routeDestination.lat,routeDestination.lon]);if(meters<=100){$('arrival').hidden=false;arrivalDismissed=true}else if(routeLine){$('placeInfo').textContent='🚗 Destinazione a '+(meters/1000).toFixed(2)+' km in linea d’aria. Segui il tracciato sulla mappa.'}}if(gpsMarker)map.removeLayer(gpsMarker);if(gpsCircle)map.removeLayer(gpsCircle);gpsCircle=L.circle(ll,{radius:acc,color:'#2870df',weight:1,fillOpacity:.06}).addTo(map);gpsMarker=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#2870df',fillOpacity:1}).addTo(map);$('target').style.display='block';$('gps').textContent='● GPS attivo';if(firstFix){map.setView(ll,Math.max(map.getZoom(),14));firstFix=false}},err=>$('status').textContent='GPS: '+err.message,{enableHighAccuracy:true,maximumAge:10000,timeout:20000})};
+
+// V11 — private local diary, photos and track archive. IndexedDB; no cloud upload.
+const v11db=new Promise((resolve,reject)=>{const r=indexedDB.open('lazioFungiDiary',1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('hikes'))db.createObjectStore('hikes',{keyPath:'id'});if(!db.objectStoreNames.contains('finds'))db.createObjectStore('finds',{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+async function v11Store(store,method,value){const db=await v11db;return new Promise((resolve,reject)=>{const tx=db.transaction(store,method==='getAll'?'readonly':'readwrite'),os=tx.objectStore(store),r=method==='getAll'?os.getAll():method==='put'?os.put(value):os.delete(value);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+let v11CurrentHike=null,v11ReviewLayers=[],v11Parking=null;
+function v11Escape(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function v11Open(title,html){$('v11Title').textContent=title;$('v11Body').innerHTML=html;$('v11Sheet').hidden=false}
+$('v11Close').onclick=()=>$('v11Sheet').hidden=true;
+function v11Download(name,data,type){const u=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}
+async function v11Persist(){if(!v11CurrentHike)return;v11CurrentHike.points=track.slice();v11CurrentHike.distance=trackDistance;v11CurrentHike.updated=Date.now();await v11Store('hikes','put',v11CurrentHike)}
+const v11OriginalRecord=recordPosition;
+recordPosition=function(ll,accuracy){const n=track.length;v11OriginalRecord(ll,accuracy);if(track.length!==n&&v11CurrentHike)v11Persist().catch(()=>{})};
+$('trackBtn').addEventListener('click',async()=>{if(tracking){v11CurrentHike={id:'h'+Date.now(),started:trackStart,points:track.slice(),distance:trackDistance,parking:v11Parking||lastGps};await v11Persist().catch(()=>{})}else if(v11CurrentHike){v11CurrentHike.ended=Date.now();await v11Persist().catch(()=>{});v11CurrentHike=null}},true);
+$('v11Photo').onclick=()=>{if(!lastGps){alert('Attiva il GPS e attendi una posizione valida per registrare il ritrovamento.');return}$('v11Camera').click()};
+$('v11Camera').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ const loc=[...lastGps],time=Date.now();
+ const snapshot={bosco:$('forestName').textContent,score:$('score').textContent,pioggia:$('rain').textContent,temperatura:$('temp').textContent,quota:$('elev').textContent,pendenza:$('slope').textContent,esposizione:$('aspect').textContent,specieSelezionata:$('species').value,giorniPioggia:$('days').value};
+ // Resize image for local storage economy; original stays on device.
+ const url=URL.createObjectURL(file),img=new Image();img.src=url;
+ try{await img.decode();const scale=Math.min(1,1400/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const photo=await new Promise(r=>c.toBlob(r,'image/jpeg',.78));
+ const id='f'+time,find={id,hikeId:v11CurrentHike?.id||null,time,lat:loc[0],lon:loc[1],accuracy:gpsCircle?.getRadius?.()||null,photo,snapshot,name:'Ritrovamento',notes:''};
+ await v11Store('finds','put',find);
+ v11Open('Nuovo ritrovamento','<img id="v11Preview"><p>Posizione GPS: '+loc.map(x=>x.toFixed(5)).join(', ')+'</p><label>Nome o specie<input id="v11Name" value="Ritrovamento"></label><label>Note<textarea id="v11Notes" rows="3" placeholder="Dove si trovava, ambiente, dettagli…"></textarea></label><p><small>Salvati ora, coordinate e parametri ambientali disponibili. Le coordinate restano private sul dispositivo.</small></p><button id="v11SaveFind">Salva scheda</button>');
+ $('v11Preview').src=URL.createObjectURL(photo);
+ $('v11SaveFind').onclick=async()=>{find.name=$('v11Name').value.trim()||'Ritrovamento';find.notes=$('v11Notes').value;await v11Store('finds','put',find);$('v11Sheet').hidden=true};
+ }catch(err){alert('Impossibile salvare la foto: '+err.message)}finally{URL.revokeObjectURL(url);e.target.value=''}
+};
+async function v11Archive(){
+ try{const hikes=(await v11Store('hikes','getAll')).sort((a,b)=>b.started-a.started),finds=await v11Store('finds','getAll');
+ const list=hikes.map(h=>'<div class="entry"><b>'+new Date(h.started).toLocaleString('it-IT')+'</b><p>'+(h.distance/1000).toFixed(2)+' km · '+h.points.length+' punti · '+finds.filter(f=>f.hikeId===h.id).length+' foto</p><button data-hike="'+h.id+'">Apri sulla mappa</button></div>').join('');
+ v11Open('Le mie escursioni','<p><small>Archivio privato su questo iPhone/Safari. Esporta regolarmente i dati: la memoria del browser può essere cancellata.</small></p>'+ (list||'<p>Nessuna escursione salvata. Avvia una traccia GPS per crearne una.</p>')+'<h3>Ritrovamenti ('+finds.length+')</h3>'+finds.sort((a,b)=>b.time-a.time).map(f=>'<div class="entry"><b>'+v11Escape(f.name)+'</b><p><small>'+new Date(f.time).toLocaleString('it-IT')+' · '+f.lat.toFixed(5)+', '+f.lon.toFixed(5)+'</small></p><button data-find="'+f.id+'">Vedi foto e dettagli</button></div>').join(''));
+ $('v11Body').querySelectorAll('[data-hike]').forEach(b=>b.onclick=()=>v11Review(b.dataset.hike));
+ $('v11Body').querySelectorAll('[data-find]').forEach(b=>b.onclick=()=>v11Find(b.dataset.find));
+ }catch(e){v11Open('Archivio non disponibile','<p>'+v11Escape(e.message)+'</p>')}
+}
+$('v11Archive').onclick=v11Archive;
+function v11ClearReview(){v11ReviewLayers.forEach(l=>map.removeLayer(l));v11ReviewLayers=[]}
+async function v11Review(id){
+ const h=(await v11Store('hikes','getAll')).find(x=>x.id===id);if(!h)return;
+ v11ClearReview();if(h.points.length){const line=L.polyline(h.points.map(p=>[p.lat,p.lon]),{color:'#ff5b3e',weight:5}).addTo(map);v11ReviewLayers.push(line);map.fitBounds(line.getBounds(),{padding:[35,35]})}
+ const finds=(await v11Store('finds','getAll')).filter(f=>f.hikeId===id);
+ finds.forEach(f=>{const m=L.marker([f.lat,f.lon],{icon:L.divIcon({html:'📷',className:'',iconSize:[28,28]})}).addTo(map).on('click',()=>v11Find(f.id));v11ReviewLayers.push(m)});
+ v11Open('Riesplora escursione','<p>'+new Date(h.started).toLocaleString('it-IT')+' · '+(h.distance/1000).toFixed(2)+' km · '+finds.length+' ritrovamenti</p><p>La traccia e le foto sono ora visibili sulla mappa.</p><button id="v11ExportGpx">Esporta GPX</button> <button id="v11BackMap">Mostra mappa</button> <button id="v11ClearMap">Rimuovi traccia</button>');
+ $('v11ExportGpx').onclick=()=>{const pts=h.points.map(p=>'<trkpt lat="'+p.lat+'" lon="'+p.lon+'"><time>'+new Date(p.time).toISOString()+'</time></trkpt>').join('');v11Download('escursione-'+id+'.gpx','<?xml version="1.0"?><gpx version="1.1" creator="Lazio Fungi Map" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Escursione</name><trkseg>'+pts+'</trkseg></trk></gpx>','application/gpx+xml')};
+ $('v11BackMap').onclick=()=>$('v11Sheet').hidden=true;$('v11ClearMap').onclick=()=>{v11ClearReview();$('v11Sheet').hidden=true};
+}
+async function v11Find(id){
+ const f=(await v11Store('finds','getAll')).find(x=>x.id===id);if(!f)return;
+ const u=URL.createObjectURL(f.photo),s=f.snapshot||{};
+ v11Open(f.name,'<img id="v11Preview"><p>'+new Date(f.time).toLocaleString('it-IT')+'</p><p>GPS: '+f.lat.toFixed(6)+', '+f.lon.toFixed(6)+(f.accuracy?' · ±'+Math.round(f.accuracy)+' m':'')+'</p><p>Bosco: '+v11Escape(s.bosco)+'<br>Indice: '+v11Escape(s.score)+'/100<br>Pioggia: '+v11Escape(s.pioggia)+'<br>Temperatura: '+v11Escape(s.temperatura)+'<br>Quota: '+v11Escape(s.quota)+'<br>Pendenza: '+v11Escape(s.pendenza)+'<br>Esposizione: '+v11Escape(s.esposizione)+'</p><p>'+v11Escape(f.notes)+'</p><button id="v11GotoFind">Mostra punto sulla mappa</button> <button id="v11ExportPhoto">Salva foto</button>');
+ $('v11Preview').src=u;$('v11GotoFind').onclick=()=>{map.setView([f.lat,f.lon],17);v11ClearReview();v11ReviewLayers.push(L.marker([f.lat,f.lon]).addTo(map));$('v11Sheet').hidden=true};$('v11ExportPhoto').onclick=()=>v11Download('fungo-'+id+'.jpg',f.photo,'image/jpeg');
+}
+</script></body></html>
